@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智慧天氣顯示器</title>
+
+<!-- 簡單手機友善排版 -->
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background: #f2f2f2;
+        text-align: center;
+    }
+    .card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 0 10px #ccc;
+        width: 90%;
+        max-width: 400px;
+        margin: auto;
+    }
+    input {
+        width: 80%;
+        padding: 10px;
+        margin-top: 10px;
+        border-radius: 8px;
+        border: 1px solid #aaa;
+        font-size: 16px;
+    }
+    button {
+        margin-top: 15px;
+        padding: 12px 24px;
+        background: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+    button:hover {
+        background: #0056c3;
+    }
+    #weather-icon {
+        width: 80px;
+        margin-top: 10px;
+    }
+</style>
+
+</head>
+<body>
+
+<h2>🌦 智慧天氣顯示器</h2>
+
+<div class="card">
+    <h3>查詢城市天氣</h3>
+
+    <input id="cityInput" type="text" placeholder="請輸入城市，例如：Taipei">
+    <br>
+    <button onclick="getWeather()">取得天氣</button>
+
+    <h3 id="resultCity"></h3>
+    <img id="weather-icon" style="display:none;">
+    <p id="temperature"></p>
+    <p id="description"></p>
+</div>
+
+
+<script>
+const apiKey = "YOUR_API_KEY";  // ←←← 替換為你的 OpenWeather API Key
+
+function getWeather() {
+    const city = document.getElementById("cityInput").value;
+    if (city === "") {
+        alert("請輸入城市名稱！");
+        return;
+    }
+
+    const url =
+        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&lang=zh_tw&units=metric`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.cod !== 200) {
+                alert("查無此城市，請確認輸入是否正確");
+                return;
+            }
+
+            document.getElementById("resultCity").innerText = data.name + " 的天氣";
+
+            // 顯示圖片（API 提供）
+            const iconCode = data.weather[0].icon;
+            const iconURL = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+            const iconImg = document.getElementById("weather-icon");
+            iconImg.src = iconURL;
+            iconImg.style.display = "block";
+
+            // 顯示溫度與描述
+            document.getElementById("temperature").innerText = "🌡 温度: " + data.main.temp + "°C";
+            document.getElementById("description").innerText = "☁ 狀態: " + data.weather[0].description;
+        })
+        .catch(error => {
+            console.log(error);
+            alert("無法取得資料，請稍後重試");
+        });
+}
+</script>
+
+</body>
+</html>
