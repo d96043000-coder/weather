@@ -55,11 +55,13 @@
 
 <div class="card">
 
+    <!-- 自動定位 -->
     <h3>📍 自動定位天氣</h3>
     <button onclick="getLocationWeather()">取得目前位置天氣</button>
 
     <hr>
 
+    <!-- 手動輸入城市查詢 -->
     <h3>🔍 查詢城市天氣</h3>
     <input id="cityInput" type="text" placeholder="請輸入城市，例如：Taipei">
     <button onclick="getWeatherByCity()">取得天氣</button>
@@ -73,7 +75,7 @@
 
 <script>
 
-const apiKey = "e8ce471283bf66d94a2b914cf56ff549";   // ← 替換成你的 OpenWeather API Key
+const apiKey = "e8ce471283bf66d94a2b914cf56ff549";   // 這是你的 OpenWeather API Key
 
 // ----------------------
 // 1. 自動定位天氣
