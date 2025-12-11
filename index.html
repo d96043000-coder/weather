@@ -6,98 +6,648 @@
 <title>智慧天氣顯示器</title>
 
 <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
     body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-        background: #f2f2f2;
-        text-align: center;
-    }
-    .card {
-        background: white;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
         padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .header {
+        text-align: center;
+        color: white;
+        margin-bottom: 30px;
+        animation: fadeIn 1s ease-in;
+    }
+    
+    .header h1 {
+        font-size: 2.5em;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        margin-bottom: 10px;
+    }
+    
+    .header p {
+        font-size: 1.1em;
+        opacity: 0.9;
+    }
+    
+    .container {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        width: 100%;
+        max-width: 500px;
+        backdrop-filter: blur(10px);
+        animation: slideUp 0.8s ease-out;
+    }
+    
+    .search-section {
+        margin-bottom: 25px;
+    }
+    
+    .search-section h3 {
+        color: #667eea;
+        margin-bottom: 15px;
+        font-size: 1.2em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .input-group {
+        position: relative;
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    
+    #cityInput {
+        flex: 1;
+        padding: 15px 50px 15px 20px;
+        border: 2px solid #e0e0e0;
         border-radius: 12px;
-        box-shadow: 0 0 10px #ccc;
-        width: 90%;
-        max-width: 400px;
-        margin: auto;
-    }
-    input {
-        width: 80%;
-        padding: 10px;
-        margin-top: 10px;
-        border-radius: 8px;
-        border: 1px solid #aaa;
         font-size: 16px;
+        transition: all 0.3s;
+        background: white;
     }
-    button {
-        margin-top: 15px;
-        padding: 12px 24px;
-        background: #007BFF;
+    
+    #cityInput:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .voice-btn {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #667eea;
         color: white;
         border: none;
         border-radius: 8px;
-        font-size: 16px;
+        width: 40px;
+        height: 40px;
         cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2em;
     }
+    
+    .voice-btn:hover {
+        background: #5568d3;
+        transform: translateY(-50%) scale(1.1);
+    }
+    
+    .voice-btn.listening {
+        background: #ff6b6b;
+        animation: pulse 1s infinite;
+    }
+    
+    .suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 50px;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-top: none;
+        border-radius: 0 0 12px 12px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    
+    .suggestions.show {
+        display: block;
+    }
+    
+    .suggestion-item {
+        padding: 12px 20px;
+        cursor: pointer;
+        transition: background 0.2s;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .suggestion-item:hover {
+        background: #f5f7fa;
+    }
+    
+    .suggestion-item:last-child {
+        border-bottom: none;
+    }
+    
+    .suggestion-highlight {
+        font-weight: 600;
+        color: #667eea;
+    }
+    
+    button {
+        width: 100%;
+        padding: 15px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
     button:hover {
-        background: #0056c3;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
     }
-    #weather-icon {
-        width: 80px;
-        margin-top: 10px;
+    
+    button:active {
+        transform: translateY(0);
     }
-    .weather-info {
-        margin-top: 20px;
-        text-align: left;
-        background: #f9f9f9;
-        padding: 15px;
+    
+    .divider {
+        height: 2px;
+        background: linear-gradient(to right, transparent, #e0e0e0, transparent);
+        margin: 25px 0;
+    }
+    
+    .correction-notice {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
         border-radius: 8px;
+        padding: 10px 15px;
+        margin-bottom: 15px;
+        font-size: 14px;
+        color: #856404;
+        display: none;
     }
+    
+    .correction-notice.show {
+        display: block;
+        animation: fadeIn 0.3s ease-in;
+    }
+    
+    .weather-result {
+        margin-top: 25px;
+        text-align: center;
+    }
+    
+    #resultCity {
+        color: #667eea;
+        font-size: 1.8em;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+    
+    #weather-icon {
+        width: 120px;
+        height: 120px;
+        margin: 15px 0;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    .weather-info {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        padding: 20px;
+        border-radius: 15px;
+        margin-top: 20px;
+        animation: fadeIn 0.5s ease-in;
+    }
+    
     .weather-info p {
-        margin: 10px 0;
-        font-size: 15px;
+        margin: 12px 0;
+        font-size: 16px;
         line-height: 1.6;
+        padding: 10px;
+        background: white;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .loading {
+        text-align: center;
+        color: #667eea;
+        font-size: 1.2em;
+        margin: 20px 0;
+    }
+    
+    .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: translateY(-50%) scale(1); }
+        50% { transform: translateY(-50%) scale(1.1); }
+    }
+    
+    @media (max-width: 600px) {
+        .header h1 {
+            font-size: 2em;
+        }
+        
+        .container {
+            padding: 20px;
+        }
     }
 </style>
 
 </head>
 <body>
 
-<h2>🌦 智慧天氣顯示器</h2>
+<div class="header">
+    <h1>🌦️ 智慧天氣顯示器</h1>
+    <p>智慧搜尋 · 自動修正 · 語音輸入</p>
+</div>
 
-<div class="card">
+<div class="container">
 
     <!-- 自動定位 -->
-    <h3>📍 自動定位天氣</h3>
-    <button onclick="getLocationWeather()">取得目前位置天氣</button>
+    <div class="search-section">
+        <h3>📍 自動定位天氣</h3>
+        <button onclick="getLocationWeather()">取得目前位置天氣</button>
+    </div>
 
-    <hr>
+    <div class="divider"></div>
 
     <!-- 手動輸入城市查詢 -->
-    <h3>🔍 查詢城市天氣</h3>
-    <input id="cityInput" type="text" placeholder="請輸入城市，例如：台北、東京 或 Taipei,TW">
-    <button onclick="getWeatherByCity()">取得天氣</button>
+    <div class="search-section">
+        <h3>🔍 查詢城市天氣</h3>
+        
+        <div id="correctionNotice" class="correction-notice"></div>
+        
+        <div class="input-group">
+            <input id="cityInput" type="text" placeholder="輸入城市名稱（支援模糊搜尋）..." autocomplete="off">
+            <div class="suggestions" id="suggestions"></div>
+            <button class="voice-btn" onclick="startVoiceInput()" id="voiceBtn" title="語音輸入">
+                🎤
+            </button>
+        </div>
+        <button onclick="getWeatherByCity()">取得天氣</button>
+    </div>
 
-    <h3 id="resultCity"></h3>
-    <img id="weather-icon" style="display:none;">
-    
-    <div class="weather-info" id="weatherInfo" style="display:none;">
-        <p id="temperature"></p>
-        <p id="description"></p>
-        <p id="humidity"></p>
-        <p id="rain"></p>
-        <p id="clothing"></p>
-        <p id="umbrella"></p>
+    <!-- 天氣結果 -->
+    <div class="weather-result">
+        <h3 id="resultCity"></h3>
+        <img id="weather-icon" style="display:none;">
+        
+        <div class="weather-info" id="weatherInfo" style="display:none;">
+            <p id="temperature"></p>
+            <p id="description"></p>
+            <p id="humidity"></p>
+            <p id="rain"></p>
+            <p id="clothing"></p>
+            <p id="umbrella"></p>
+        </div>
+        
+        <div id="loading" style="display:none;">
+            <div class="spinner"></div>
+            <p class="loading">載入中...</p>
+        </div>
     </div>
 
 </div>
 
 <script>
 
-const apiKey = "e8ce471283bf66d94a2b914cf56ff549";   // 這是你的 OpenWeather API Key
+const apiKey = "e8ce471283bf66d94a2b914cf56ff549";
+
+// 大幅擴充的城市資料庫（200+ 城市）
+const cityMapping = {
+    // ===== 台灣 =====
+    "台北": "Taipei,TW", "臺北": "Taipei,TW", "台北市": "Taipei,TW",
+    "新北": "New Taipei City,TW", "新北市": "New Taipei City,TW",
+    "桃園": "Taoyuan,TW", "桃園市": "Taoyuan,TW",
+    "台中": "Taichung,TW", "臺中": "Taichung,TW", "台中市": "Taichung,TW",
+    "台南": "Tainan,TW", "臺南": "Tainan,TW", "台南市": "Tainan,TW",
+    "高雄": "Kaohsiung,TW", "高雄市": "Kaohsiung,TW",
+    "基隆": "Keelung,TW", "基隆市": "Keelung,TW",
+    "新竹": "Hsinchu,TW", "新竹市": "Hsinchu,TW",
+    "嘉義": "Chiayi,TW", "嘉義市": "Chiayi,TW",
+    "苗栗": "Miaoli,TW", "彰化": "Changhua,TW",
+    "南投": "Nantou,TW", "雲林": "Yunlin,TW",
+    "屏東": "Pingtung,TW", "宜蘭": "Yilan,TW",
+    "花蓮": "Hualien,TW", "台東": "Taitung,TW", "臺東": "Taitung,TW",
+    "澎湖": "Penghu,TW", "金門": "Kinmen,TW", "馬祖": "Matsu,TW",
+    
+    // ===== 日本 =====
+    "東京": "Tokyo,JP", "大阪": "Osaka,JP", "京都": "Kyoto,JP",
+    "名古屋": "Nagoya,JP", "札幌": "Sapporo,JP", "福岡": "Fukuoka,JP",
+    "橫濱": "Yokohama,JP", "神戶": "Kobe,JP", "廣島": "Hiroshima,JP",
+    "仙台": "Sendai,JP", "沖繩": "Okinawa,JP", "奈良": "Nara,JP",
+    "靜岡": "Shizuoka,JP", "千葉": "Chiba,JP", "埼玉": "Saitama,JP",
+    "岡山": "Okayama,JP", "熊本": "Kumamoto,JP", "鹿兒島": "Kagoshima,JP",
+    "長崎": "Nagasaki,JP", "金澤": "Kanazawa,JP", "新潟": "Niigata,JP",
+    
+    // ===== 韓國 =====
+    "首爾": "Seoul,KR", "釜山": "Busan,KR", "仁川": "Incheon,KR",
+    "大邱": "Daegu,KR", "大田": "Daejeon,KR", "光州": "Gwangju,KR",
+    "濟州": "Jeju,KR", "蔚山": "Ulsan,KR", "水原": "Suwon,KR",
+    
+    // ===== 中國 =====
+    "北京": "Beijing,CN", "上海": "Shanghai,CN", "廣州": "Guangzhou,CN",
+    "深圳": "Shenzhen,CN", "成都": "Chengdu,CN", "重慶": "Chongqing,CN",
+    "杭州": "Hangzhou,CN", "西安": "Xi'an,CN", "武漢": "Wuhan,CN",
+    "南京": "Nanjing,CN", "天津": "Tianjin,CN", "蘇州": "Suzhou,CN",
+    "青島": "Qingdao,CN", "長沙": "Changsha,CN", "鄭州": "Zhengzhou,CN",
+    "大連": "Dalian,CN", "廈門": "Xiamen,CN", "福州": "Fuzhou,CN",
+    "昆明": "Kunming,CN", "瀋陽": "Shenyang,CN", "哈爾濱": "Harbin,CN",
+    
+    // ===== 港澳 =====
+    "香港": "Hong Kong,HK", "澳門": "Macau,MO",
+    
+    // ===== 東南亞 =====
+    "新加坡": "Singapore,SG", "曼谷": "Bangkok,TH",
+    "吉隆坡": "Kuala Lumpur,MY", "檳城": "Penang,MY",
+    "河內": "Hanoi,VN", "胡志明市": "Ho Chi Minh,VN",
+    "馬尼拉": "Manila,PH", "宿霧": "Cebu,PH",
+    "雅加達": "Jakarta,ID", "峇里島": "Bali,ID", "泗水": "Surabaya,ID",
+    "金邊": "Phnom Penh,KH", "仰光": "Yangon,MM",
+    "萬象": "Vientiane,LA", "汶萊": "Bandar Seri Begawan,BN",
+    
+    // ===== 南亞 =====
+    "新德里": "New Delhi,IN", "孟買": "Mumbai,IN", "加爾各答": "Kolkata,IN",
+    "班加羅爾": "Bangalore,IN", "清奈": "Chennai,IN",
+    "伊斯蘭馬巴德": "Islamabad,PK", "卡拉奇": "Karachi,PK",
+    "達卡": "Dhaka,BD", "可倫坡": "Colombo,LK", "加德滿都": "Kathmandu,NP",
+    
+    // ===== 歐洲 =====
+    "倫敦": "London,GB", "曼徹斯特": "Manchester,GB", "愛丁堡": "Edinburgh,GB",
+    "巴黎": "Paris,FR", "馬賽": "Marseille,FR", "里昂": "Lyon,FR", "尼斯": "Nice,FR",
+    "柏林": "Berlin,DE", "慕尼黑": "Munich,DE", "法蘭克福": "Frankfurt,DE", "漢堡": "Hamburg,DE",
+    "羅馬": "Rome,IT", "米蘭": "Milan,IT", "威尼斯": "Venice,IT", "佛羅倫斯": "Florence,IT",
+    "馬德里": "Madrid,ES", "巴塞隆納": "Barcelona,ES", "瓦倫西亞": "Valencia,ES", "塞維亞": "Seville,ES",
+    "阿姆斯特丹": "Amsterdam,NL", "鹿特丹": "Rotterdam,NL",
+    "布魯塞爾": "Brussels,BE", "維也納": "Vienna,AT", "蘇黎世": "Zurich,CH", "日內瓦": "Geneva,CH",
+    "斯德哥爾摩": "Stockholm,SE", "哥本哈根": "Copenhagen,DK", "奧斯陸": "Oslo,NO",
+    "赫爾辛基": "Helsinki,FI", "雷克雅維克": "Reykjavik,IS",
+    "華沙": "Warsaw,PL", "布拉格": "Prague,CZ", "布達佩斯": "Budapest,HU",
+    "雅典": "Athens,GR", "里斯本": "Lisbon,PT", "都柏林": "Dublin,IE",
+    "莫斯科": "Moscow,RU", "聖彼得堡": "Saint Petersburg,RU",
+    
+    // ===== 北美 =====
+    "紐約": "New York,US", "洛杉磯": "Los Angeles,US", "舊金山": "San Francisco,US",
+    "芝加哥": "Chicago,US", "西雅圖": "Seattle,US", "波士頓": "Boston,US",
+    "拉斯維加斯": "Las Vegas,US", "邁阿密": "Miami,US", "奧蘭多": "Orlando,US",
+    "華盛頓": "Washington,US", "費城": "Philadelphia,US", "聖地牙哥": "San Diego,US",
+    "丹佛": "Denver,US", "鳳凰城": "Phoenix,US", "休士頓": "Houston,US",
+    "達拉斯": "Dallas,US", "亞特蘭大": "Atlanta,US", "底特律": "Detroit,US",
+    "多倫多": "Toronto,CA", "溫哥華": "Vancouver,CA", "蒙特婁": "Montreal,CA",
+    "渥太華": "Ottawa,CA", "卡加利": "Calgary,CA",
+    "墨西哥城": "Mexico City,MX", "坎昆": "Cancun,MX",
+    
+    // ===== 南美 =====
+    "布宜諾斯艾利斯": "Buenos Aires,AR", "聖保羅": "Sao Paulo,BR",
+    "里約熱內盧": "Rio de Janeiro,BR", "利馬": "Lima,PE",
+    "波哥大": "Bogota,CO", "聖地牙哥": "Santiago,CL",
+    
+    // ===== 大洋洲 =====
+    "雪梨": "Sydney,AU", "墨爾本": "Melbourne,AU", "布里斯本": "Brisbane,AU",
+    "伯斯": "Perth,AU", "阿得雷德": "Adelaide,AU", "坎培拉": "Canberra,AU",
+    "黃金海岸": "Gold Coast,AU", "達爾文": "Darwin,AU",
+    "奧克蘭": "Auckland,NZ", "威靈頓": "Wellington,NZ", "基督城": "Christchurch,NZ",
+    
+    // ===== 中東 =====
+    "杜拜": "Dubai,AE", "阿布達比": "Abu Dhabi,AE",
+    "伊斯坦堡": "Istanbul,TR", "安卡拉": "Ankara,TR",
+    "特拉維夫": "Tel Aviv,IL", "耶路撒冷": "Jerusalem,IL",
+    "利雅德": "Riyadh,SA", "多哈": "Doha,QA", "開羅": "Cairo,EG",
+    
+    // ===== 非洲 =====
+    "約翰尼斯堡": "Johannesburg,ZA", "開普敦": "Cape Town,ZA",
+    "奈洛比": "Nairobi,KE", "拉哥斯": "Lagos,NG",
+    "卡薩布蘭卡": "Casablanca,MA"
+};
+
+// 建立反向索引以支援模糊搜尋
+const cityList = Object.keys(cityMapping);
 
 // ----------------------
-// 1. 自動定位天氣
+// 計算編輯距離（用於模糊搜尋）
+// ----------------------
+function levenshteinDistance(str1, str2) {
+    const m = str1.length;
+    const n = str2.length;
+    const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+    
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    
+    for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+            if (str1[i - 1] === str2[j - 1]) {
+                dp[i][j] = dp[i - 1][j - 1];
+            } else {
+                dp[i][j] = Math.min(
+                    dp[i - 1][j] + 1,
+                    dp[i][j - 1] + 1,
+                    dp[i - 1][j - 1] + 1
+                );
+            }
+        }
+    }
+    
+    return dp[m][n];
+}
+
+// ----------------------
+// 模糊搜尋城市
+// ----------------------
+function fuzzySearchCity(input) {
+    if (!input || input.length < 1) return [];
+    
+    const results = [];
+    const inputLower = input.toLowerCase();
+    
+    for (const city of cityList) {
+        const cityLower = city.toLowerCase();
+        
+        // 完全匹配
+        if (cityLower === inputLower) {
+            results.push({ city, score: 0, type: 'exact' });
+            continue;
+        }
+        
+        // 前綴匹配
+        if (cityLower.startsWith(inputLower)) {
+            results.push({ city, score: 1, type: 'prefix' });
+            continue;
+        }
+        
+        // 包含匹配
+        if (cityLower.includes(inputLower)) {
+            results.push({ city, score: 2, type: 'contains' });
+            continue;
+        }
+        
+        // 編輯距離匹配（容錯1-2個字元）
+        const distance = levenshteinDistance(inputLower, cityLower);
+        if (distance <= 2 && input.length >= 2) {
+            results.push({ city, score: 3 + distance, type: 'fuzzy' });
+        }
+    }
+    
+    // 依相似度排序
+    results.sort((a, b) => a.score - b.score);
+    
+    return results.slice(0, 8); // 最多顯示8個建議
+}
+
+// ----------------------
+// 顯示建議清單
+// ----------------------
+function showSuggestions(input) {
+    const suggestionsDiv = document.getElementById('suggestions');
+    const results = fuzzySearchCity(input);
+    
+    if (results.length === 0) {
+        suggestionsDiv.classList.remove('show');
+        return;
+    }
+    
+    suggestionsDiv.innerHTML = results.map(result => {
+        const city = result.city;
+        const code = cityMapping[city].split(',')[1];
+        return `<div class="suggestion-item" onclick="selectCity('${city}')">
+            <span class="suggestion-highlight">${city}</span> <span style="color:#999; font-size:0.9em;">${code}</span>
+        </div>`;
+    }).join('');
+    
+    suggestionsDiv.classList.add('show');
+}
+
+// ----------------------
+// 選擇建議的城市
+// ----------------------
+function selectCity(city) {
+    document.getElementById('cityInput').value = city;
+    document.getElementById('suggestions').classList.remove('show');
+}
+
+// ----------------------
+// 隱藏建議清單
+// ----------------------
+function hideSuggestions() {
+    setTimeout(() => {
+        document.getElementById('suggestions').classList.remove('show');
+    }, 200);
+}
+
+// ----------------------
+// 尋找最相似的城市（用於自動修正）
+// ----------------------
+function findClosestCity(input) {
+    if (cityMapping[input]) {
+        return { city: input, corrected: false };
+    }
+    
+    const results = fuzzySearchCity(input);
+    
+    if (results.length > 0 && results[0].score <= 2) {
+        return { city: results[0].city, corrected: true };
+    }
+    
+    return null;
+}
+
+// ----------------------
+// 語音輸入功能
+// ----------------------
+let recognition = null;
+
+function startVoiceInput() {
+    const voiceBtn = document.getElementById("voiceBtn");
+    
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert("抱歉，您的瀏覽器不支援語音輸入功能\n建議使用 Chrome 瀏覽器");
+        return;
+    }
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = 'zh-TW';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    
+    recognition.start();
+    voiceBtn.classList.add('listening');
+    voiceBtn.innerHTML = '🔴';
+    
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById("cityInput").value = transcript;
+        voiceBtn.classList.remove('listening');
+        voiceBtn.innerHTML = '🎤';
+        showSuggestions(transcript);
+    };
+    
+    recognition.onerror = function(event) {
+        console.error('語音辨識錯誤:', event.error);
+        voiceBtn.classList.remove('listening');
+        voiceBtn.innerHTML = '🎤';
+        
+        if (event.error === 'no-speech') {
+            alert("未偵測到語音，請再試一次");
+        } else if (event.error === 'not-allowed') {
+            alert("請允許麥克風權限以使用語音輸入");
+        }
+    };
+    
+    recognition.onend = function() {
+        voiceBtn.classList.remove('listening');
+        voiceBtn.innerHTML = '🎤';
+    };
+}
+
+// ----------------------
+// 自動定位天氣
 // ----------------------
 function getLocationWeather() {
     if (!navigator.geolocation) {
@@ -105,17 +655,17 @@ function getLocationWeather() {
         return;
     }
 
+    showLoading();
+    
     navigator.geolocation.getCurrentPosition(
         (pos) => {
             const lat = pos.coords.latitude;
             const lon = pos.coords.longitude;
-
-            const url =
-                `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&lang=zh_tw&units=metric`;
-
+            const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&lang=zh_tw&units=metric`;
             fetchWeather(url);
         },
         (err) => {
+            hideLoading();
             alert("無法取得定位資訊，請允許定位");
             console.error(err);
         }
@@ -123,58 +673,52 @@ function getLocationWeather() {
 }
 
 // ----------------------
-// 2. 城市查詢天氣
+// 城市查詢天氣
 // ----------------------
-// 中文城市名稱對照表
-const cityMapping = {
-    "台北": "Taipei,TW",
-    "臺北": "Taipei,TW",
-    "新北": "New Taipei City,TW",
-    "桃園": "Taoyuan,TW",
-    "台中": "Taichung,TW",
-    "臺中": "Taichung,TW",
-    "台南": "Tainan,TW",
-    "臺南": "Tainan,TW",
-    "高雄": "Kaohsiung,TW",
-    "基隆": "Keelung,TW",
-    "新竹": "Hsinchu,TW",
-    "嘉義": "Chiayi,TW",
-    "東京": "Tokyo,JP",
-    "大阪": "Osaka,JP",
-    "京都": "Kyoto,JP",
-    "首爾": "Seoul,KR",
-    "釜山": "Busan,KR",
-    "北京": "Beijing,CN",
-    "上海": "Shanghai,CN",
-    "香港": "Hong Kong,HK",
-    "澳門": "Macau,MO",
-    "新加坡": "Singapore,SG",
-    "曼谷": "Bangkok,TH",
-    "倫敦": "London,GB",
-    "巴黎": "Paris,FR",
-    "紐約": "New York,US",
-    "洛杉磯": "Los Angeles,US",
-    "舊金山": "San Francisco,US",
-    "雪梨": "Sydney,AU",
-    "墨爾本": "Melbourne,AU"
-};
-
 function getWeatherByCity() {
-    let city = document.getElementById("cityInput").value.trim();
-    if (city === "") {
+    let input = document.getElementById("cityInput").value.trim();
+    if (input === "") {
         alert("請輸入城市名稱！");
         return;
     }
 
-    // 如果輸入的是中文，轉換成英文城市名
-    if (cityMapping[city]) {
-        city = cityMapping[city];
+    // 嘗試尋找最相似的城市
+    const result = findClosestCity(input);
+    
+    if (!result) {
+        alert(`找不到城市「${input}」\n請嘗試其他城市名稱`);
+        return;
+    }
+    
+    let city = cityMapping[result.city];
+    
+    // 顯示修正通知
+    const correctionNotice = document.getElementById('correctionNotice');
+    if (result.corrected) {
+        correctionNotice.innerHTML = `💡 您是否要查詢「<strong>${result.city}</strong>」？已為您自動修正`;
+        correctionNotice.classList.add('show');
+    } else {
+        correctionNotice.classList.remove('show');
     }
 
-    const url =
-        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&lang=zh_tw&units=metric`;
-
+    showLoading();
+    
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&lang=zh_tw&units=metric`;
     fetchWeather(url);
+}
+
+// ----------------------
+// 顯示/隱藏載入動畫
+// ----------------------
+function showLoading() {
+    document.getElementById("loading").style.display = "block";
+    document.getElementById("weatherInfo").style.display = "none";
+    document.getElementById("weather-icon").style.display = "none";
+    document.getElementById("resultCity").innerText = "";
+}
+
+function hideLoading() {
+    document.getElementById("loading").style.display = "none";
 }
 
 // ----------------------
@@ -189,11 +733,11 @@ function fetchWeather(url) {
             return res.json();
         })
         .then(data => {
-            console.log("API 回應:", data); // 除錯用
+            hideLoading();
+            console.log("API 回應:", data);
 
-            // 修正：cod 可能是字串或數字
             if (data.cod && data.cod != 200) {
-                alert("查無天氣資訊，請確認輸入是否正確\n建議格式：城市名,國家代碼（例如：Taipei,TW）");
+                alert("查無天氣資訊，請確認輸入是否正確");
                 return;
             }
 
@@ -274,14 +818,36 @@ function fetchWeather(url) {
             document.getElementById("clothing").innerText = clothingAdvice;
         })
         .catch(err => {
+            hideLoading();
             console.error("錯誤詳情:", err);
-            alert("無法取得天氣資料\n" + 
-                  "可能原因：\n" +
-                  "1. API Key 尚未啟用（新註冊需等待數小時）\n" +
-                  "2. 城市名稱格式錯誤（建議格式：城市名,國家代碼）\n" +
-                  "3. 網路連線問題");
+            alert("無法取得天氣資料\n可能原因：網路連線問題或 API 錯誤");
         });
 }
+
+// ----------------------
+// 事件監聽
+// ----------------------
+// 輸入時顯示建議
+document.getElementById("cityInput").addEventListener("input", function(e) {
+    showSuggestions(e.target.value);
+});
+
+// 失去焦點時隱藏建議
+document.getElementById("cityInput").addEventListener("blur", hideSuggestions);
+
+// 按 Enter 鍵查詢
+document.getElementById("cityInput").addEventListener("keypress", function(event) {
+    if (event.key === "Enter") {
+        getWeatherByCity();
+    }
+});
+
+// 點擊外部隱藏建議
+document.addEventListener("click", function(e) {
+    if (!e.target.closest('.input-group')) {
+        document.getElementById('suggestions').classList.remove('show');
+    }
+});
 
 </script>
 
