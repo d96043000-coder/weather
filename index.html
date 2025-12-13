@@ -605,45 +605,55 @@ let recognition = null;
 function startVoiceInput() {
     const voiceBtn = document.getElementById("voiceBtn");
     
+    // 檢查瀏覽器支援
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert("抱歉，您的瀏覽器不支援語音輸入功能\n建議使用 Chrome 瀏覽器");
+        alert("您的瀏覽器不支援語音輸入\n建議使用 Chrome 或 Edge 瀏覽器");
         return;
     }
     
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognition = new SpeechRecognition();
-    recognition.lang = 'zh-TW';
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    
-    recognition.start();
-    voiceBtn.classList.add('listening');
-    voiceBtn.innerHTML = '🔴';
-    
-    recognition.onresult = function(event) {
-        const transcript = event.results[0][0].transcript;
-        document.getElementById("cityInput").value = transcript;
-        voiceBtn.classList.remove('listening');
-        voiceBtn.innerHTML = '🎤';
-        showSuggestions(transcript);
-    };
-    
-    recognition.onerror = function(event) {
-        console.error('語音辨識錯誤:', event.error);
-        voiceBtn.classList.remove('listening');
-        voiceBtn.innerHTML = '🎤';
+    try {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'zh-TW';
+        recognition.continuous = false;
+        recognition.interimResults = false;
         
-        if (event.error === 'no-speech') {
-            alert("未偵測到語音，請再試一次");
-        } else if (event.error === 'not-allowed') {
-            alert("請允許麥克風權限以使用語音輸入");
-        }
-    };
-    
-    recognition.onend = function() {
+        voiceBtn.classList.add('listening');
+        voiceBtn.innerHTML = '🔴';
+        
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById("cityInput").value = transcript;
+            voiceBtn.classList.remove('listening');
+            voiceBtn.innerHTML = '🎤';
+            showSuggestions(transcript);
+        };
+        
+        recognition.onerror = function(event) {
+            voiceBtn.classList.remove('listening');
+            voiceBtn.innerHTML = '🎤';
+            
+            if (event.error === 'no-speech') {
+                alert("未偵測到語音，請再試一次");
+            } else if (event.error === 'not-allowed') {
+                alert("請允許麥克風權限\n點擊網址列左側圖示 → 麥克風 → 允許");
+            } else {
+                alert("語音辨識錯誤：" + event.error);
+            }
+        };
+        
+        recognition.onend = function() {
+            voiceBtn.classList.remove('listening');
+            voiceBtn.innerHTML = '🎤';
+        };
+        
+        recognition.start();
+        
+    } catch (error) {
         voiceBtn.classList.remove('listening');
         voiceBtn.innerHTML = '🎤';
-    };
+        alert("無法啟動語音輸入");
+    }
 }
 
 // ----------------------
@@ -651,24 +661,44 @@ function startVoiceInput() {
 // ----------------------
 function getLocationWeather() {
     if (!navigator.geolocation) {
-        alert("你的裝置無法取得定位資訊");
+        alert("您的裝置不支援定位功能");
         return;
     }
 
     showLoading();
     
+    // 定位選項：降低精度要求以提高成功率
+    const options = {
+        enableHighAccuracy: false,  // 改為 false 提高相容性
+        timeout: 15000,             // 延長到 15 秒
+        maximumAge: 30000           // 允許使用 30 秒內的快取位置
+    };
+    
     navigator.geolocation.getCurrentPosition(
-        (pos) => {
-            const lat = pos.coords.latitude;
-            const lon = pos.coords.longitude;
+        // 成功
+        function(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
             const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&lang=zh_tw&units=metric`;
             fetchWeather(url);
         },
-        (err) => {
+        // 失敗
+        function(error) {
             hideLoading();
-            alert("無法取得定位資訊，請允許定位");
-            console.error(err);
-        }
+            
+            let msg = "無法取得定位\n";
+            
+            if (error.code === 1) {
+                msg += "權限被拒絕\n請允許定位權限";
+            } else if (error.code === 2) {
+                msg += "無法取得位置\n請確認定位服務已開啟";
+            } else if (error.code === 3) {
+                msg += "定位逾時\n請再試一次";
+            }
+            
+            alert(msg);
+        },
+        options
     );
 }
 
